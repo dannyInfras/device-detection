@@ -9,7 +9,8 @@ export class RedisCacheService implements CacheService {
   private client: Redis
 
   constructor(configService: ConfigService) {
-    this.client = new Redis(configService.get("app.redis.url"))
+    const redisUrl = configService.get<string>("app.redis.url") || "redis://localhost:6379"
+    this.client = new Redis(redisUrl)
     this.client.on("error", (err) => this.logger.error(`Redis error: ${err.message}`))
   }
 

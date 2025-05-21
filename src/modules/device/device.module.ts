@@ -7,10 +7,13 @@ import { RedisCacheService } from "../../common/services/redis-cache.service"
 import { CryptoService } from "../../common/utils/crypto.utils"
 import { ClientsModule, Transport } from "@nestjs/microservices"
 import { ConfigService, ConfigModule } from "@nestjs/config"
+import { Reflector } from "@nestjs/core"
+import { getRepositoryToken } from "@nestjs/typeorm"
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DeviceOrmEntity]),
+    ConfigModule,
     ClientsModule.registerAsync([
       {
         name: "KAFKA_CLIENT",
@@ -19,11 +22,11 @@ import { ConfigService, ConfigModule } from "@nestjs/config"
           transport: Transport.KAFKA,
           options: {
             client: {
-              clientId: configService.get("app.kafka.clientId"),
-              brokers: configService.get("app.kafka.brokers"),
+              clientId: configService.get('app.kafka.clientId') || 'auth-service',
+              brokers: configService.get('app.kafka.brokers') || ['localhost:9092'],
             },
             consumer: {
-              groupId: "device-group",
+              groupId: configService.get('app.kafka.groupId') || 'device-group',
             },
           },
         }),
@@ -32,17 +35,46 @@ import { ConfigService, ConfigModule } from "@nestjs/config"
     ]),
   ],
   providers: [
-    DetectDeviceUseCase,
-    DeviceTypeOrmRepository,
-    RedisCacheService,
-    CryptoService,
+    {
+      provide: CryptoService,
+      useFactory: (configService) => {
+        return new CryptoService(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: DeviceTypeOrmRepository,
+      useFactory: (deviceRepo, cryptoService) => {
+        return new DeviceTypeOrmRepository(deviceRepo, cryptoService);
+      },
+      inject: [getRepositoryToken(DeviceOrmEntity), CryptoService],
+    },
+    {
+      provide: RedisCacheService,
+      useFactory: (configService) => {
+        return new RedisCacheService(configService);
+      },
+      inject: [ConfigService],
+    },
     {
       provide: "DeviceRepository",
-      useClass: DeviceTypeOrmRepository,
+      useExisting: DeviceTypeOrmRepository,
     },
     {
       provide: "CacheService",
-      useClass: RedisCacheService,
+      useExisting: RedisCacheService,
+    },
+    {
+      provide: DetectDeviceUseCase,
+      useFactory: (deviceRepository, cacheService, kafkaClient, cryptoService) => {
+        return new DetectDeviceUseCase(
+          deviceRepository,
+          cacheService,
+          kafkaClient,
+          cryptoService
+        );
+      },
+      inject: ["DeviceRepository", "CacheService", "KAFKA_CLIENT", CryptoService],
     },
   ],
   exports: [DetectDeviceUseCase, "DeviceRepository"],

@@ -8,6 +8,7 @@ import { AuthModule } from "./modules/auth/auth.module"
 import appConfig from "./config/app.config"
 import { DeviceOrmEntity } from "./modules/device/infrastructure/persistence/typeorm/entities/device.orm-entity"
 import { VerificationTokenOrmEntity } from "./modules/auth/infrastructure/persistence/typeorm/entities/verification-token.orm-entity"
+import { UserOrmEntity } from "./modules/auth/infrastructure/persistence/typeorm/entities/user.orm-entity"
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { VerificationTokenOrmEntity } from "./modules/auth/infrastructure/persis
         username: configService.get("app.db.username"),
         password: configService.get("app.db.password"),
         database: configService.get("app.db.name"),
-        entities: [DeviceOrmEntity, VerificationTokenOrmEntity],
+        entities: [DeviceOrmEntity, VerificationTokenOrmEntity, UserOrmEntity],
         synchronize: configService.get("app.env") !== "production",
         ssl: configService.get("app.env") === "production" ? { rejectUnauthorized: false } : false,
       }),
@@ -43,11 +44,11 @@ import { VerificationTokenOrmEntity } from "./modules/auth/infrastructure/persis
           transport: Transport.KAFKA,
           options: {
             client: {
-              clientId: configService.get("app.kafka.clientId"),
-              brokers: configService.get("app.kafka.brokers"),
+              clientId: configService.get('app.kafka.clientId') || 'auth-service',
+              brokers: configService.get('app.kafka.brokers') || ['localhost:9092']
             },
             consumer: {
-              groupId: "auth-group",
+              groupId: configService.get('app.kafka.groupId') || 'auth-group',
             },
           },
         }),

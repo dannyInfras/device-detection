@@ -8,7 +8,19 @@ export class CryptoService {
   private key: Buffer
 
   constructor(configService: ConfigService) {
-    this.key = Buffer.from(configService.get("app.encryption.key"), "hex")
+    const encryptionKey = configService.get<string>("app.encryption.key")
+    if (!encryptionKey) {
+      // Generate a 32-byte key (required for AES-256)
+      this.key = randomBytes(32);
+    } else {
+      // If a key is provided, ensure it's the correct length
+      if (Buffer.from(encryptionKey, 'hex').length !== 32) {
+        // If the provided key doesn't have the correct length, generate a new one
+        this.key = randomBytes(32);
+      } else {
+        this.key = Buffer.from(encryptionKey, "hex")
+      }
+    }
   }
 
   encrypt(text: string): string {

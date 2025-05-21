@@ -1,18 +1,18 @@
-import { Injectable } from "@nestjs/common"
-import type { Repository } from "typeorm"
+import { Injectable, Inject } from "@nestjs/common"
+import { Repository } from "typeorm"
 import { DeviceOrmEntity } from "../entities/device.orm-entity"
 import type { DeviceRepository } from "../../../../domain/repositories/device.repository"
 import { Device } from "../../../../domain/entities/device.entity"
 import type { CryptoService } from "../../../../../../common/utils/crypto.utils"
-import { getRepositoryToken } from "@nestjs/typeorm"
+import { InjectRepository } from "@nestjs/typeorm"
 
 @Injectable()
 export class DeviceTypeOrmRepository implements DeviceRepository {
-  private repository: Repository<DeviceOrmEntity>
-
-  constructor(private cryptoService: CryptoService) {
-    this.repository = getRepositoryToken(DeviceOrmEntity)
-  }
+  constructor(
+    @InjectRepository(DeviceOrmEntity)
+    private repository: Repository<DeviceOrmEntity>,
+    private cryptoService: CryptoService
+  ) {}
 
   async findById(id: string): Promise<Device | null> {
     const ormEntity = await this.repository.findOne({

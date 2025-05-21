@@ -1,16 +1,16 @@
 import { Injectable } from "@nestjs/common"
-import type { Repository } from "typeorm"
+import { Repository } from "typeorm"
 import { VerificationTokenOrmEntity } from "../entities/verification-token.orm-entity"
 import type { VerificationTokenRepository } from "../../../../domain/repositories/verification-token.repository"
 import { VerificationToken } from "../../../../domain/entities/verification-token.entity"
+import { InjectRepository } from "@nestjs/typeorm"
 
 @Injectable()
 export class VerificationTokenTypeOrmRepository implements VerificationTokenRepository {
-  private repository: Repository<VerificationTokenOrmEntity>
-
-  constructor(repository: Repository<VerificationTokenOrmEntity>) {
-    this.repository = repository
-  }
+  constructor(
+    @InjectRepository(VerificationTokenOrmEntity)
+    private repository: Repository<VerificationTokenOrmEntity>
+  ) {}
 
   async findById(id: string): Promise<VerificationToken | null> {
     const ormEntity = await this.repository.findOne({

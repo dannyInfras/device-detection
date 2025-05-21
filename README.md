@@ -69,7 +69,9 @@ src/
 3. Configure environment variables:
    \`\`\`bash
    cp .env.example .env
+
    # Edit .env with your configuration
+
    \`\`\`
 4. Start the application:
    \`\`\`bash
@@ -83,11 +85,15 @@ The API documentation is available at `/api` when the application is running. It
 ## Testing
 
 \`\`\`bash
+
 # Unit tests
+
 npm run test
 
 # E2E tests
+
 npm run test:e2e
 
 # Test coverage
+
 npm run test:cov

@@ -1,18 +1,21 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable, Logger, Inject } from "@nestjs/common"
 import type { DeviceRepository } from "../../domain/repositories/device.repository"
 import { Device } from "../../domain/entities/device.entity"
 import type { CacheService } from "../../../../common/interfaces/cache.interface"
-import type { ClientKafka } from "@nestjs/microservices"
+import { ClientKafka } from "@nestjs/microservices"
 import { DeviceDetectedEvent } from "../../domain/events/device-detected.event"
-import type { CryptoService } from "../../../../common/utils/crypto.utils"
+import { CryptoService } from "../../../../common/utils/crypto.utils"
 
 @Injectable()
 export class DetectDeviceUseCase {
   private readonly logger = new Logger(DetectDeviceUseCase.name)
 
   constructor(
+    @Inject("DeviceRepository")
     private deviceRepository: DeviceRepository,
+    @Inject("CacheService")
     private cacheService: CacheService,
+    @Inject("KAFKA_CLIENT")
     private kafkaClient: ClientKafka,
     private cryptoService: CryptoService,
   ) {}

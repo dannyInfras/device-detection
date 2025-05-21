@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from "@nestjs/common"
+import { Injectable, BadRequestException, Logger, Inject } from "@nestjs/common"
 import type { DeviceRepository } from "../../../device/domain/repositories/device.repository"
 import type { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository"
 import type { CacheService } from "../../../../common/interfaces/cache.interface"
@@ -8,8 +8,11 @@ export class ConfirmDeviceVerificationUseCase {
   private readonly logger = new Logger(ConfirmDeviceVerificationUseCase.name)
 
   constructor(
+    @Inject("DeviceRepository")
     private deviceRepository: DeviceRepository,
+    @Inject("VerificationTokenRepository")
     private tokenRepository: VerificationTokenRepository,
+    @Inject("CacheService")
     private cacheService: CacheService,
   ) {}
 

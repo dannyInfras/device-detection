@@ -1,8 +1,8 @@
-import { Injectable, Logger, BadRequestException } from "@nestjs/common"
+import { Injectable, Logger, BadRequestException, Inject } from "@nestjs/common"
 import type { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository"
 import type { EmailService } from "../../domain/services/email.service"
 import { VerificationToken } from "../../domain/entities/verification-token.entity"
-import type { ClientKafka } from "@nestjs/microservices"
+import { ClientKafka } from "@nestjs/microservices"
 import { VerificationInitiatedEvent } from "../../domain/events/verification-initiated.event"
 import type { DeviceRepository } from "../../../device/domain/repositories/device.repository"
 
@@ -11,9 +11,13 @@ export class VerifyDeviceUseCase {
   private readonly logger = new Logger(VerifyDeviceUseCase.name)
 
   constructor(
+    @Inject("DeviceRepository")
     private deviceRepository: DeviceRepository,
+    @Inject("VerificationTokenRepository")
     private tokenRepository: VerificationTokenRepository,
+    @Inject("EmailService")
     private emailService: EmailService,
+    @Inject("KAFKA_CLIENT")
     private kafkaClient: ClientKafka,
   ) {}
 
@@ -36,10 +40,18 @@ export class VerifyDeviceUseCase {
     await this.tokenRepository.save(token)
     this.logger.log(`Verification token created for device ${input.deviceId}`)
 
-    // Emit event for async email sending and audit logging
-    this.kafkaClient.emit(
-      "verification.initiated",
-      new VerificationInitiatedEvent(input.deviceId, input.userEmail, token.getToken()),
-    )
+    // Instead of emitting to Kafka, send email directly
+    try {
+      await this.emailService.sendVerificationEmail(input.userEmail, token.getToken(), input.deviceId)
+      this.logger.log(`Sent verification email directly for device ${input.deviceId}`)
+    } catch (error) {
+      this.logger.error(`Failed to send email directly: ${error.message}`)
+    }
+    
+    // Commented out Kafka emission for now
+    // this.kafkaClient.emit(
+    //   "verification.initiated",
+    //   new VerificationInitiatedEvent(input.deviceId, input.userEmail, token.getToken()),
+    // )
   }
 }

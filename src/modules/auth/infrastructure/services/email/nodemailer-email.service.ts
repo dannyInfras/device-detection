@@ -1,6 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable, Logger, Inject } from "@nestjs/common"
 import type { EmailService } from "../../../domain/services/email.service"
-import type { ConfigService } from "@nestjs/config"
+import { ConfigService } from "@nestjs/config"
 import { createTransport } from "nodemailer"
 import { CircuitBreaker } from "../../../../../common/utils/circuit-breaker"
 
@@ -10,7 +10,10 @@ export class NodemailerEmailService implements EmailService {
   private transporter
   private circuitBreaker: CircuitBreaker
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    @Inject(ConfigService)
+    private configService: ConfigService
+  ) {
     this.transporter = createTransport({
       host: this.configService.get("app.email.host"),
       port: this.configService.get("app.email.port"),

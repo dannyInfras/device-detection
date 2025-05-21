@@ -1,12 +1,15 @@
 import { registerAs } from "@nestjs/config"
 import { randomBytes } from "crypto"
 
+// Generate a default encryption key (32 bytes in hex format)
+const defaultEncryptionKey = randomBytes(32).toString('hex');
+
 export default registerAs("app", () => ({
   env: process.env.NODE_ENV || "development",
-  port: Number.parseInt(process.env.PORT, 10) || 3000,
+  port: Number.parseInt(process.env.PORT || "3000", 10),
   url: process.env.APP_URL || "http://localhost:3000",
   jwt: {
-    secret: process.env.JWT_SECRET || "your-jwt-secret",
+    secret: process.env.JWT_SECRET || "default-jwt-secret-for-development-only",
     expiresIn: "24h",
   },
   redis: {
@@ -14,17 +17,19 @@ export default registerAs("app", () => ({
   },
   kafka: {
     brokers: process.env.KAFKA_BROKERS?.split(",") || ["localhost:9092"],
-    clientId: "auth-service",
+    clientId: process.env.KAFKA_CLIENT_ID || "auth-service",
+    groupId: process.env.KAFKA_GROUP_ID || "auth-group",
   },
   email: {
     provider: process.env.EMAIL_PROVIDER || "nodemailer",
-    host: process.env.EMAIL_HOST,
-    port: Number.parseInt(process.env.EMAIL_PORT, 10) || 587,
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    host: process.env.EMAIL_HOST || "smtp.example.com",
+    port: Number.parseInt(process.env.EMAIL_PORT || "587", 10),
+    user: process.env.EMAIL_USER || "test@example.com",
+    pass: process.env.EMAIL_PASS || "password",
   },
   encryption: {
-    key: process.env.ENCRYPTION_KEY || Buffer.from(randomBytes(32)).toString("hex"),
+    // Use the provided encryption key or the default one
+    key: process.env.ENCRYPTION_KEY || defaultEncryptionKey,
   },
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -32,7 +37,7 @@ export default registerAs("app", () => ({
   },
   db: {
     host: process.env.DB_HOST || "localhost",
-    port: Number.parseInt(process.env.DB_PORT, 10) || 5432,
+    port: Number.parseInt(process.env.DB_PORT || "5432", 10),
     username: process.env.DB_USERNAME || "postgres",
     password: process.env.DB_PASSWORD || "postgres",
     name: process.env.DB_NAME || "auth_service",
