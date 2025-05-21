@@ -1,0 +1,52 @@
+import { Injectable } from "@nestjs/common"
+import type { Repository } from "typeorm"
+import { VerificationTokenOrmEntity } from "../entities/verification-token.orm-entity"
+import type { VerificationTokenRepository } from "../../../../domain/repositories/verification-token.repository"
+import { VerificationToken } from "../../../../domain/entities/verification-token.entity"
+
+@Injectable()
+export class VerificationTokenTypeOrmRepository implements VerificationTokenRepository {
+  private repository: Repository<VerificationTokenOrmEntity>
+
+  constructor(repository: Repository<VerificationTokenOrmEntity>) {
+    this.repository = repository
+  }
+
+  async findById(id: string): Promise<VerificationToken | null> {
+    const ormEntity = await this.repository.findOne({
+      where: { id },
+    })
+    return this.mapToDomain(ormEntity)
+  }
+
+  async findByToken(token: string): Promise<VerificationToken | null> {
+    const ormEntity = await this.repository.findOne({
+      where: { token },
+    })
+    return this.mapToDomain(ormEntity)
+  }
+
+  async save(token: VerificationToken): Promise<void> {
+    const ormEntity = new VerificationTokenOrmEntity()
+    ormEntity.id = token.getId()
+    ormEntity.deviceId = token.getDeviceId()
+    ormEntity.token = token.getToken()
+    ormEntity.expiresAt = token.getExpiresAt()
+
+    await this.repository.save(ormEntity)
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.repository.delete(id)
+  }
+
+  private mapToDomain(ormEntity: VerificationTokenOrmEntity | null): VerificationToken | null {
+    if (!ormEntity) return null
+    return new VerificationToken({
+      id: ormEntity.id,
+      deviceId: ormEntity.deviceId,
+      token: ormEntity.token,
+      expiresAt: ormEntity.expiresAt,
+    })
+  }
+}
